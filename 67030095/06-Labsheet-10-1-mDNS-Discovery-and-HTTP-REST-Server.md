@@ -618,7 +618,7 @@ python -m esptool -p <COMxx> --chip esp32 -b 460800 --before default_reset --aft
 ```powershell
 ping esp32-node.local
 ```
-*(บันทึกภาพผลการ Ping และหมายเลข IP ที่ Resolve ได้ เช่น `Reply from 192.168.1.181`)*
+![alt text](image.png)
 
 > [!TIP] **คู่มือการแก้ไขปัญหาเมื่อ Resolve ชื่อ `esp32-node.local` ไม่พบ (Troubleshooting Guide)**
 > หากคำสั่ง `ping esp32-node.local` ขึ้นข้อความ `could not find host` ให้ตรวจสอบ 2 จุดสำคัญดังนี้
@@ -669,6 +669,14 @@ success
 ---
 
 ## 4. บันทึกผลการทดลองและคำถามท้ายการทดลอง
-1. นำผลการรัน `curl -i` (โหมด verbose เพื่อดู HTTP Response Header) มาแปะในรายงาน พร้อมวิเคราะห์ว่า HTTP Header มีขนาดกี่ไบต์ และข้อมูล JSON มีขนาดกี่ไบต์
-2. หากในเครือข่ายมีคอมพิวเตอร์ที่ไม่รองรับ mDNS หรือปิดกั้นพอร์ต UDP 5353 จะเกิดผลกระทบอย่างไร และแก้ไขได้อย่างไร?
-3. เหตุใดจึงต้องเรียกคำสั่ง `cJSON_Delete(root)` และ `cJSON_free(resp)` เสมอหลังจากประมวลผลเสร็จสิ้น?
+1. วิเคราะห์ HTTP Header และ JSON
+
+ใช้คำสั่ง curl -i http://172.20.10.2/api/status เพื่อดู HTTP Response Header และข้อมูล JSON โดยตรวจสอบขนาด Header จากข้อมูลที่ได้รับ และขนาด JSON จากค่า Content-Length ใน Header
+
+2. หากไม่รองรับ mDNS หรือปิดกั้น UDP พอร์ต 5353 จะเกิดอะไรขึ้น?
+
+ไม่สามารถเข้าถึง ESP32 ผ่านชื่อ esp32-node.local ได้ วิธีแก้ไขคือใช้ IP Address โดยตรง เช่น 172.20.10.2 หรืออนุญาต mDNS ผ่าน Firewall
+
+3. เหตุใดต้องเรียก cJSON_Delete(root) และ cJSON_free(resp)?
+
+เพื่อคืนหน่วยความจำที่จองไว้หลังใช้งาน ป้องกัน Memory Leak และช่วยให้ ESP32 ทำงานได้อย่างมีประสิทธิภาพ

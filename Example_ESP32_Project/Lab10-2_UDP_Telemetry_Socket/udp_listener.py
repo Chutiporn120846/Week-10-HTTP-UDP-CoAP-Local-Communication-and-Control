@@ -15,28 +15,60 @@ lost_packets = 0
 try:
     while True:
         data, addr = sock.recvfrom(128)
-        msg = data.decode("utf-8").strip()
+        msg = data.decode("utf-8", errors="replace").strip()
+
+        # ตรวจสอบรูปแบบข้อมูลก่อนประมวลผล
+        try:
+            parts = dict(
+                item.split(":", 1)
+                for item in msg.split(",")
+                if ":" in item
+            )
+
+            if "SEQ" not in parts or "POT" not in parts:
+                print(f"[IGNORED] Invalid packet from {addr[0]}: {msg!r}")
+                continue
+
+            current_seq = int(parts["SEQ"])
+            pot_val = int(parts["POT"])
+
+        except (ValueError, TypeError):
+            print(f"[IGNORED] Cannot parse packet: {msg!r}")
+            continue
+
         packet_count += 1
-        
-        # ถอดรหัส SEQ และ POT
-        parts = dict(item.split(":") for item in msg.split(","))
-        current_seq = int(parts.get("SEQ", 0))
-        pot_val = int(parts.get("POT", 0))
 
         if last_seq is not None:
             diff = current_seq - last_seq
+
             if diff > 1:
                 lost = diff - 1
                 lost_packets += lost
-                print(f"[PACKET LOSS DETECTED] Lost {lost} packets! (Expected {last_seq + 1}, got {current_seq})")
+                print(
+                    f"[PACKET LOSS DETECTED] Lost {lost} packets! "
+                    f"(Expected {last_seq + 1}, got {current_seq})"
+                )
 
         last_seq = current_seq
-        print(f"[{addr[0]}] Seq: {current_seq:<6} | Potentiometer: {pot_val:<5} | Total Lost: {lost_packets}")
+
+        print(
+            f"[{addr[0]}] Seq: {current_seq:<6} | "
+            f"Potentiometer: {pot_val:<5} | "
+            f"Received: {packet_count} | Lost: {lost_packets}"
+        )
 
 except KeyboardInterrupt:
-    if packet_count > 0:
-        loss_rate = (lost_packets / (packet_count + lost_packets)) * 100
-        print(f"\n--- Statistics ---")
-        print(f"Received: {packet_count} packets")
-        print(f"Lost: {lost_packets} packets")
+    total_packets = packet_count + lost_packets
+
+    print("\n--- Statistics ---")
+    print(f"Received: {packet_count} packets")
+    print(f"Lost: {lost_packets} packets")
+
+    if total_packets > 0:
+        loss_rate = lost_packets / total_packets * 100
         print(f"Packet Loss Rate: {loss_rate:.2f}%")
+    else:
+        print("Packet Loss Rate: N/A (no valid packets received)")
+
+finally:
+    sock.close()
