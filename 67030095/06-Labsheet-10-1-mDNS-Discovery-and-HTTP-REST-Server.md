@@ -671,12 +671,24 @@ success
 ## 4. บันทึกผลการทดลองและคำถามท้ายการทดลอง
 1. วิเคราะห์ HTTP Header และ JSON
 
-ใช้คำสั่ง curl -i http://172.20.10.2/api/status เพื่อดู HTTP Response Header และข้อมูล JSON โดยตรวจสอบขนาด Header จากข้อมูลที่ได้รับ และขนาด JSON จากค่า Content-Length ใน Header
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 52
+
+{"status":"online","led":false,"free_heap":245000}
+
+HTTP Header: มีขนาดประมาณ 65 ไบต์
+
+JSON Response Body: มีขนาด 52 ไบต์ ตามค่า Content-Length
+
+HTTP Status Code: 200 OK หมายถึงเซิร์ฟเวอร์ประมวลผลคำขอสำเร็จ
+
+Content-Type: application/json ระบุว่าข้อมูลที่ส่งกลับมาเป็น JSON
+
+สรุป: HTTP มี Header สำหรับระบุรายละเอียดการสื่อสารเพิ่มเติมจากข้อมูล JSON ทำให้ใช้งานร่วมกับเว็บและ REST API ได้สะดวก แต่มี Overhead มากกว่าการส่งข้อมูลด้วย UDP แบบพื้นฐาน
 
 2. หากไม่รองรับ mDNS หรือปิดกั้น UDP พอร์ต 5353 จะเกิดอะไรขึ้น?
-
 ไม่สามารถเข้าถึง ESP32 ผ่านชื่อ esp32-node.local ได้ วิธีแก้ไขคือใช้ IP Address โดยตรง เช่น 172.20.10.2 หรืออนุญาต mDNS ผ่าน Firewall
 
 3. เหตุใดต้องเรียก cJSON_Delete(root) และ cJSON_free(resp)?
-
 เพื่อคืนหน่วยความจำที่จองไว้หลังใช้งาน ป้องกัน Memory Leak และช่วยให้ ESP32 ทำงานได้อย่างมีประสิทธิภาพ
